@@ -2,4 +2,6 @@ output = "hello world"
 print(output)
 print(output.upper())
 
-name = "mudiaga"
+myList = []
+myList.append(output)
+print(myList)
