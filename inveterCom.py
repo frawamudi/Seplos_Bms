@@ -369,7 +369,7 @@ def main(args=None):
         "bypasspwm": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
         "bankv": [bankvolt],
         "voltrange": [33],
-        "voltrange": [current]
+        "current": [current]
     }
     
     
@@ -381,7 +381,7 @@ def main(args=None):
     headers["Content-Type"] = "application/json"
     
 
-    r = requests.post("http://192.168.1.3/monitor2.php", headers=headers, data=b)
+    r = requests.post("http://192.168.1.4/monitor2.php", headers=headers, data=b)
     print(r.status_code)
 
     # Converting back from ascii to binary 
