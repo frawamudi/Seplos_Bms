@@ -1,10 +1,11 @@
+from logging import warning
 import serial
 from time import sleep
 import binascii
 import math
 #import serial
-
-
+import requests
+import json
 #--------------------------------------------------------------------
 # ITEMS | SOI | VER | ADR | CID1 | CID2 | LEN | INFO | CHKSUM | EO1 |
 #--------------------------------------------------------------------
@@ -27,7 +28,7 @@ class seplos:
         #test data
         self.bmsTelInfoData = "~20004600A08E00010E0E1C0E160E160E170E170E180E110BFC102E0E1A0E070E0B0E1C0E14060BE40BE60BE50BE50BF10BEC3A9813B604190A3A9B00453A98000103E813BF0000000000000000DF0C$"
         #self.bmsData = "~20004600A08E00010E0EB80ECA0EC70EE10EB70ECD0ED00EC90EA00E9B0EC70EBC0EB20EBB060BF20BE90BF20BF20C100BFB000014A523EF0A9C4000E59C40000103E814AA0000000000000000DE29"
-        self.bmsTelCmdData = ""
+        self.bmsTelCmdData = "~20004600D05E00010E0202020202020202020002020202060000000000000002140011000000020100000100000000000000000001EBA2"
         self.bmsPackVoltage = 0.00
         self.bmsCurrent = 0.00
         self.bmsRatedCapacity = 150
@@ -339,6 +340,49 @@ def main(args=None):
     print( "SOC:", Bms.getBmsPackSOC())
     print( "Bms Cycles:", Bms.getBmsCycles())
 
+    voltages = json.dumps(Bms.getBmsCellLevelVoltages())
+    bankvolt = json.dumps(Bms.getBmsPackVoltage())
+    current = json.dumps(Bms.getBmsCurrent())
+
+    
+    
+    
+    data = {
+        "banks": 0,
+        "seriesmodules": 14,
+        "sent": 1,
+        "recieved": 200,
+        "modulesfnd": 14,
+        "badcrc": 2,
+        "ignored": 0,
+        "roundtrip": 1000,
+        "oos": 0,
+        "error": [],
+        "warnings": [],
+        "voltages": voltages,
+        "minvoltages": voltages,
+        "maxvoltages": voltages,
+        "inittemp": ["23","23", "23","23","23","23","23","23","25","23","23","23","23","21"],
+        "exttemp": ["23","23", "23","23","23","23","23","23","25","23","23","23","23","25"],
+        "bypass": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
+        "bypasshot": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
+        "bypasspwm": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
+        "bankv": [bankvolt],
+        "voltrange": [33],
+        "voltrange": [current]
+    }
+    
+    
+    b = (json.dumps(data))
+    print(b)
+
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    
+
+    r = requests.post("http://192.168.1.3/monitor2.php", headers=headers, data=b)
+    print(r.status_code)
 
     # Converting back from ascii to binary 
 
