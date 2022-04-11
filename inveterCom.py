@@ -149,8 +149,10 @@ class seplos:
 
                 rawBmsParameter = (hByte)|(mhByte)|(mlByte)|rawCellData[3]
                 print("beforeDIV", rawBmsParameter)
-                rawBmsParameter = (~rawBmsParameter) & 0xFFFF
-                rawBmsParameter /=divideBy
+                #avoid dividing by zero
+                if(rawBmsParameter != 0):
+                    rawBmsParameter = (~rawBmsParameter) & 0xFFFF
+                    rawBmsParameter /=divideBy
                 print("C/D", rawBmsParameter)
                 self.bmsCurrent = rawBmsParameter
             else:     
@@ -344,7 +346,7 @@ def main(args=None):
     bankvolt = json.dumps(Bms.getBmsPackVoltage())
     current = json.dumps(Bms.getBmsCurrent())
 
-    '''
+    
     data = {
         "banks": 0,
         "seriesmodules": 14,
@@ -377,7 +379,7 @@ def main(args=None):
     headers = {}
     headers["Accept"] = "application/json"
     headers["Content-Type"] = "application/json"
-    '''
+    
 
 
     r = requests.post("http://192.168.1.15/monitor2.php", headers=headers, data=b)
