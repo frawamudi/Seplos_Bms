@@ -381,8 +381,8 @@ def main(args=None):
     headers["Content-Type"] = "application/json"
     
 
-    r = requests.post("http://192.168.1.4/monitor2.php", headers=headers, data=b)
-    print(r.status_code)
+    r = requests.post("http://192.168.1.15/monitor2.php", headers=headers, data=b)
+    print(r.text)
 
     # Converting back from ascii to binary 
 
