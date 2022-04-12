@@ -375,6 +375,7 @@ def main(args=None):
     
     b = (json.dumps(data))
     print(b)
+    b = string(b)
 
     headers = {}
     headers["Accept"] = "application/json"
@@ -382,7 +383,7 @@ def main(args=None):
     
 
 
-    r = requests.post("http://192.168.1.15/monitor2.php", headers=headers, data=b)
+    r = requests.post("http://192.168.1.8/monitor2.php", data=b)
     print(r.text)
 
 
