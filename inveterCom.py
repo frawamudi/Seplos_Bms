@@ -375,15 +375,15 @@ def main(args=None):
     
     b = (json.dumps(data))
     print(b)
-    b = string(b)
+    
 
-    headers = {}
-    headers["Accept"] = "application/json"
-    headers["Content-Type"] = "application/json"
+    dictdata = {}
+    dictdata["Current"] = current
+    dictdata["Voltage"] = bankvolt
     
 
 
-    r = requests.post("http://192.168.1.8/monitor2.php", data=b)
+    r = requests.post("http://192.168.1.8/monitor2.php", data=dictdata)
     print(r.text)
 
 
