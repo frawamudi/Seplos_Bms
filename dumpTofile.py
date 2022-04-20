@@ -41,3 +41,16 @@ out_file.close()
 
 b = json.dumps(bmsJsonData, indent = 6)
 print(b)
+
+def openFile(fileDetails):
+
+    #fileDatails is of type turple 
+    #fileDetails[0] = file path, #fileDetails[1] = "w" or "r", 
+    #fileDetails[2] = json data to be stored on file,
+     
+    out_file = open(fileDetails["file_path"], fileDetails["w_r"])
+    json.dump(fileDetails["data_"], fileDetails["file_path"], indent = 6)
+    out_file.close()
+    
+
+

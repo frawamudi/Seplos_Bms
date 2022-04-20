@@ -345,36 +345,6 @@ def main(args=None):
     voltages = json.dumps(Bms.getBmsCellLevelVoltages())
     bankvolt = json.dumps(Bms.getBmsPackVoltage())
     current = json.dumps(Bms.getBmsCurrent())
-
-    
-    data = {
-        "banks": 0,
-        "seriesmodules": 14,
-        "sent": 1,
-        "recieved": 200,
-        "modulesfnd": 14,
-        "badcrc": 2,
-        "ignored": 0,
-        "roundtrip": 1000,
-        "oos": 0,
-        "error": [],
-        "warnings": [],
-        "voltages": voltages,
-        "minvoltages": voltages,
-        "maxvoltages": voltages,
-        "inittemp": ["23","23", "23","23","23","23","23","23","25","23","23","23","23","21"],
-        "exttemp": ["23","23", "23","23","23","23","23","23","25","23","23","23","23","25"],
-        "bypass": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
-        "bypasshot": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
-        "bypasspwm": ["0","0","0","0","0","0","0","0","0","0","0","0","0","0"],
-        "bankv": [bankvolt],
-        "voltrange": [33],
-        "current": [current]
-    }
-    
-    
-    b = (json.dumps(data))
-    print(b)
     
 
     dictdata = {}
