@@ -378,16 +378,23 @@ def main(args=None):
     
 
     dictdata = {}
-    dictdata["Current"] = current
-    dictdata["Voltage"] = bankvolt
-    
+    dictdata["id"] = 1
+    dictdata["name"] = "mudi"
+    dictdata["capacity"] = 100
+    dictdata["voltage"] = bankvolt
+    dictdata["current"] = current
+    dictdata["soc"] = Bms.getBmsPackSOC()
 
 
-    r = requests.post("http://192.168.1.8/monitor2.php", data=dictdata)
+
+    r = requests.post("http://192.168.1.8/update.php", data=dictdata)
     print(r.text)
+    
+    #print(json.dumps(r.text))
 
 
     # Converting back from ascii to binary 
 
 if __name__ == '__main__':
     main()
+
