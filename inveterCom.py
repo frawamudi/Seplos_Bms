@@ -145,7 +145,7 @@ class seplos:
             print("C/D:", rawCurrentBmsDataInfo)
             if self.asciiToBinary[rawCurrentBmsDataInfo[1]] == 1 and self.asciiToBinary[rawCurrentBmsDataInfo[0]] == 0:
                 #rawBmsParameter = ~(hByte )|~(mhByte>>8)|~(mlByte>>4)|rawCellData[3]
-
+                #battery is discharging if this branch execute
 
                 rawBmsParameter = (hByte)|(mhByte)|(mlByte)|rawCellData[3]
                 print("beforeDIV", rawBmsParameter)
