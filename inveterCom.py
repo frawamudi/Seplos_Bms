@@ -1,4 +1,5 @@
 from logging import warning
+from requests.structures import CaseInsensitiveDict
 import serial
 from time import sleep
 import binascii
@@ -6,6 +7,7 @@ import math
 #import serial
 import requests
 import json
+import listMinMax as mx
 #--------------------------------------------------------------------
 # ITEMS | SOI | VER | ADR | CID1 | CID2 | LEN | INFO | CHKSUM | EO1 |
 #--------------------------------------------------------------------
@@ -35,18 +37,12 @@ class seplos:
         self.bmsRemainingCapacity = 0.00
         self.bmsPackSOC = 0.00
         self.bmsCellLevelVolages = []
-        self.bmsTemperate = []
         self.bmsCycles = 1
         self.bmsBusVoltage = 0.00
 
         #####################################################
 
-        self.bmsFaultsStatus = 0 #Alarm event 1
-        self.bmsCellVoltageStatus = 0 #Alarm event 2
-        self.bmsStatesStatus = 0 #bmsStatus
-        self.bmsChargeDischargeStatus = 0 #Alarm event 5
-        self.bmsProtectionStatus = 0 #Alarm event 6
-        self.bmsCalibrationStatus = 0 #Alarm event 8
+        self.bmsStatusFlag = {"stateFlag":0,"currentFlag":0,"lowCellFlag":0,"highCellFlag":0}
 
     
     def readBms( self ):
@@ -120,6 +116,48 @@ class seplos:
             lengthData.append( self.bmsTelInfoData[ i+startPointer ])
         return lengthData
 
+    def shiftTwices(self, rawCellData):
+        print("Raw Flags:", rawCellData)
+        hbyte = self.asciiToBinary[rawCellData[0]]
+        lbyte = self.asciiToBinary[rawCellData[1]]
+
+
+        hbyte = hbyte << 4
+        #lbyte = lbyte << 4
+
+        flag = hbyte|lbyte
+        return flag
+
+
+    def calBmsStatusFlags( self):
+
+        #extract bms state
+        rawCellData = self.extractSeplosCmdData(105, 2)
+        flag = self.shiftTwices( rawCellData )
+        self.bmsStatusFlag["stateFlag"] = flag
+        print("States Flag:", flag)
+
+        #extract bms current flags
+        rawCellData = self.extractSeplosCmdData(85, 2)
+        flag = self.shiftTwices( rawCellData )
+        self.bmsStatusFlag["currentFlag"] = flag
+        print("Current Flag:", flag)
+
+
+        #extract bms lowCellFlags
+        rawCellData = self.extractSeplosCmdData(85, 2)
+        flag = self.shiftTwices( rawCellData )
+        self.bmsStatusFlag["lowCellFlag"] = flag
+        print("Low cell voltage Flag:", flag)
+
+
+        #extract bms highCellFlag
+        rawCellData = self.extractSeplosCmdData(70, 2)
+        flag = self.shiftTwices( rawCellData )
+        self.bmsStatusFlag["highCellFlag"] = flag
+        print("High cell Flag:", flag)
+
+
 
     def calBmsParameters( self, rawCellData, divideBy, typeOfParameter = "None"):
         #print( rawCellData )
@@ -138,10 +176,12 @@ class seplos:
             return True
             #check for parameter types
         elif typeOfParameter == "bmsBankCurrent":
+
+            #the data extracted tells the state of the BMS
+
             rawCurrentBmsDataInfo = self.extractSeplosCmdData(105, 2)
 
-   
-            
+
             print("C/D:", rawCurrentBmsDataInfo)
             if self.asciiToBinary[rawCurrentBmsDataInfo[1]] == 1 and self.asciiToBinary[rawCurrentBmsDataInfo[0]] == 0:
                 #rawBmsParameter = ~(hByte )|~(mhByte>>8)|~(mlByte>>4)|rawCellData[3]
@@ -180,8 +220,73 @@ class seplos:
 
         #print( cellNo )
         #print(aBinaryCellVoltage)
-        return rawBmsParameter
-        
+        #return rawBmsParameter
+
+    
+    def extractParameterFields(self,rawBmsData,innerloop, outloop = 0):
+        inputList = []
+        inputList = rawBmsData.copy()
+        #print("list ",inputList)
+
+        if outloop > 0:
+            for x in range(outloop):
+                cellInByte = []  
+                for y in range(innerloop):
+                    cellVoltPackets = inputList.pop(0)
+                    cellInByte.append(self.asciiToBinary[cellVoltPackets])
+                    print("Data > ", cellVoltPackets)
+
+            return cellInByte
+
+        else:
+            currentRawByte = []
+            #cellInByte = []
+            for x in range(innerloop):    
+                currentPacket = inputList.pop(0)
+                currentRawByte.append(self.asciiToBinary[currentPacket])
+            return currentRawByte
+
+
+
+    #in development
+    #do processing of battery 
+    def processAllBmsParameters( self ):
+        #clear bmsCellLevelVotage data structure each time this function is called
+        #because we using the list.append() which will keep adding to the bmsCellVoltage data
+        #self.bmsCellLevelVolages = []
+
+        #find cell level voltages at index 19 to 56( 14s battery bank) with CID2 0x42h
+        '''
+        rawBmsData = self.extractSeplosInfoData( 19, 56)
+        cellInByte = self.extractParameterFields(rawBmsData, 4, 14)
+        self.calBmsParameters( cellInByte, 1000, "cellVoltages" )#divide by 
+        '''
+
+        self.processBmsCellLevelVotage()
+
+        #Process Current
+        rawBmsData = self.extractSeplosInfoData( 101, 4)
+        cellInByte = self.extractParameterFields(rawBmsData, 4)
+        self.calBmsParameters( cellInByte, 100, "bmsBankCurrent")
+
+        #Process BMS Cycles
+        rawBmsData = self.extractSeplosInfoData( 127, 4)
+        cellInByte = self.extractParameterFields(rawBmsData, 4)
+        self.calBmsParameters(cellInByte, 100, "bmsCycles")
+
+        #Process BMS bank and Bus Voltages
+        self.processBmsVoltage("bmsBankVoltage")
+        self.processBmsVoltage("bmsBusVoltage")
+
+        #Process BMS SOC
+        rawBmsData = self.extractSeplosInfoData( 119, 4)
+        cellInByte = self.extractParameterFields(rawBmsData, 4)
+        self.calBmsParameters(cellInByte, 10, "bmsBankSOC")
+
+        return True
+
+
+
 
 
     #this function process cell level votages 
@@ -236,17 +341,21 @@ class seplos:
         else:
             return False
 
-        currentRawByte = []
-        for x in range(4):
-            currentPacket = rawCurrentBmsData.pop(0)
-            currentRawByte.append(self.asciiToBinary[currentPacket])
-        print( currentRawByte)
+        #currentRawByte = []
+        #for x in range(4):
+            #currentPacket = rawCurrentBmsData.pop(0)
+            #currentRawByte.append(self.asciiToBinary[currentPacket])
+        #print( currentRawByte)
+
+
+        cellInByte = self.extractParameterFields(rawCurrentBmsData, 4)
+        print(totalVoltage, cellInByte)
 
         if( totalVoltage == "bmsBankVoltage"):
-            self.calBmsParameters( currentRawByte, 100, "bmsBankVoltage")
+            self.calBmsParameters( cellInByte, 100, "bmsBankVoltage")
             return True
         elif( totalVoltage == "bmsBusVoltage"):
-            self.calBmsParameters( currentRawByte, 100, "bmsBusVoltage")
+            self.calBmsParameters( cellInByte, 100, "bmsBusVoltage")
             return True
         else:
             return False
@@ -319,18 +428,20 @@ def main(args=None):
 
     #Bms.bmsData = readBms()  
     
+
     Bms.readBms()
+    Bms.calBmsStatusFlags()
+    Bms.processAllBmsParameters()
+
     
-    
+    '''
     Bms.processBmsCellLevelVotage()
     Bms.processBmsCurrent()
     Bms.processBmsVoltage("bmsBusVoltage")
     Bms.processBmsVoltage("bmsBankVoltage")
     Bms.processBmsSOC()
     Bms.processBmsCycles()
-
-
-
+    '''
 
 
     print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
@@ -347,6 +458,7 @@ def main(args=None):
     current = json.dumps(Bms.getBmsCurrent())
     
 
+
     dictdata = {}
     dictdata["id"] = 1
     dictdata["name"] = "mudi"
@@ -357,8 +469,43 @@ def main(args=None):
 
 
 
-    r = requests.post("http://192.168.1.8/update.php", data=dictdata)
-    print(r.text)
+
+
+    url = "http://batterystatus.sunhive.com/api/devices/update"
+
+    headers = CaseInsensitiveDict()
+    #headers["Content-Type"] = "application/json"
+
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+
+    data = {
+        "deviceID": "SH001",
+        "address": "12c Talabi Lagos",
+        "size": "3kwh",
+        "max_min": "50",
+        "numberOfCycle": 11,
+        "status": 1
+    }
+    
+    maxRange = mx.max_check(Bms.bmsCellLevelVolages)
+    minRange = mx.min_check(Bms.bmsCellLevelVolages)
+
+    cellRange = (maxRange - minRange)*1000
+    data["max_min"] = int(cellRange)
+    data["numberOfCycle"] = Bms.bmsCycles
+
+    p = json.dumps(data, indent=6)
+    print(p)
+
+
+    resp = requests.post(url, data=p, headers=headers)
+
+    print(resp.status_code)
+
+
+
+    #r = requests.post("http://192.168.1.8/update.php", data=dictdata)
+    #print(r.text)
     
     #print(json.dumps(r.text))
 
