@@ -283,6 +283,27 @@ class seplos:
         cellInByte = self.extractParameterFields(rawBmsData, 4)
         self.calBmsParameters(cellInByte, 10, "bmsBankSOC")
 
+<<<<<<< HEAD
+=======
+
+
+
+
+        '''
+        for x in range(14):
+            cellInByte = []
+            for y in range(4):
+                cellVoltPackets = rawCellLevelBmsData.pop(0) #
+                cellInByte.append(self.asciiToBinary[cellVoltPackets ])
+            # self.bmsCellLevelVolages[ x ]  
+            self.calBmsParameters( cellInByte, 1000, "cellVoltages" )#divide by 1000
+            #refactory calCellVoltage function to manipulate binary data
+            #and do proper data conditioning
+            #print(cellInByte)
+        '''
+
+
+>>>>>>> ce2a108ded78c90fcdbb8c4bae155e42e942b161
         return True
 
 
