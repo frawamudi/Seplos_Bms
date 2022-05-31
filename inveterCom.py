@@ -78,26 +78,6 @@ class seplos:
             return False
 
 
-        """
-        except serial.SerialException as e:
-            print("Cant open", ser.port)
-            print(str(e)) 
-
-            return False
-
-        
-        ser = serial.Serial ("/dev/ttyUSB0", 19200)    #Open port with baud rate
-        ser.write("~20004642E00200FD37\r".encode("ascii"))
-
-        sleep(0.5)
-        received_data = ser.read()              #read serial port
-        data_left = ser.inWaiting()             #check for remaining byte
-        received_data += ser.read(data_left)
-        self.bmsData.strip()
-        self.bmsData = received_data.decode("ascii")
-        print ("data recieved:", self.bmsData)  #print received data
-        ser.close()
-        """
     def extractSeplosCmdData( self, startPointer, pointerRange):
         lengthData = []
         if startPointer > startPointer + 1:
@@ -247,9 +227,6 @@ class seplos:
             return currentRawByte
 
 
-
-    #in development
-    #do processing of battery 
     def processAllBmsParameters( self ):
         #clear bmsCellLevelVotage data structure each time this function is called
         #because we using the list.append() which will keep adding to the bmsCellVoltage data
