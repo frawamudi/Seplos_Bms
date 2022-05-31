@@ -15,9 +15,9 @@ def min_check(x):
   return min_val
 
 #List
-my_list = [2, 6, 8, 14, 3, 77, 63]
+#my_list = [2, 6, 8, 14, 3, 77, 63]
 
   #Printing Values
 
-print("Maximum of the list", max_check(my_list))
-print("Minimum of the list", min_check(my_list))
+#print("Maximum of the list", max_check(my_list))
+#print("Minimum of the list", min_check(my_list))

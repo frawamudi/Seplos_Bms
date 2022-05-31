@@ -228,16 +228,6 @@ class seplos:
 
 
     def processAllBmsParameters( self ):
-        #clear bmsCellLevelVotage data structure each time this function is called
-        #because we using the list.append() which will keep adding to the bmsCellVoltage data
-        #self.bmsCellLevelVolages = []
-
-        #find cell level voltages at index 19 to 56( 14s battery bank) with CID2 0x42h
-        '''
-        rawBmsData = self.extractSeplosInfoData( 19, 56)
-        cellInByte = self.extractParameterFields(rawBmsData, 4, 14)
-        self.calBmsParameters( cellInByte, 1000, "cellVoltages" )#divide by 
-        '''
 
         self.processBmsCellLevelVotage()
 
@@ -268,8 +258,6 @@ class seplos:
 
     #this function process cell level votages 
     def processBmsCellLevelVotage( self ):
-        #clear bmsCellLevelVotage data structure each time this function is called
-        #because we using the list.append() which will keep adding to the bmsCellVoltage data
         self.bmsCellLevelVolages = []
         #find cell level voltages at index 19 to 56( 14s battery bank) with CID2 0x42h
         rawCellLevelBmsData = self.extractSeplosInfoData( 19, 56)
@@ -278,17 +266,11 @@ class seplos:
             for y in range(4):
                 cellVoltPackets = rawCellLevelBmsData.pop(0) #
                 cellInByte.append(self.asciiToBinary[cellVoltPackets ])
-            # self.bmsCellLevelVolages[ x ]  
             self.calBmsParameters( cellInByte, 1000, "cellVoltages" )#divide by 1000
-            #refactory calCellVoltage function to manipulate binary data
-            #and do proper data conditioning
-            #print(cellInByte)
         return True
 
 
     def processBmsCurrent( self ):
-        #rawCurrentBmsDataInfo = self.extractSeplosCmdData(107, 2)
-        #if self.asciiToBinary[rawCurrentBmsDataInfo[0]] == 1:
         rawCurrentBmsData = self.extractSeplosInfoData( 101, 4)
         currentRawByte = []
         for x in range(4):
@@ -318,13 +300,6 @@ class seplos:
         else:
             return False
 
-        #currentRawByte = []
-        #for x in range(4):
-            #currentPacket = rawCurrentBmsData.pop(0)
-            #currentRawByte.append(self.asciiToBinary[currentPacket])
-        #print( currentRawByte)
-
-
         cellInByte = self.extractParameterFields(rawCurrentBmsData, 4)
         print(totalVoltage, cellInByte)
 
@@ -341,7 +316,7 @@ class seplos:
 
     def processBmsSOC( self ):
         rawCurrentBmsData = self.extractSeplosInfoData( 119, 4)
-        #rawCurrentBmsData = self.extractSeplosData( 131, 4)
+        #rawCurrentBmsData = self.extractSeplosInfoData( 131, 4)
         currentRawByte = []
         for x in range(4):
             currentPacket = rawCurrentBmsData.pop(0)
@@ -382,43 +357,10 @@ def main(args=None):
 
     #REMEMBER TO CHANGE LIST APPEND FUNCTION TO INSERT
 
-    #length = Bms.extractSeplosData( 19, 56)
-    #print( length )
-    #print(len(length))
-    #cmd = hex ( Bms.bmsData)
-    #print( cmd )
-
-    """
-    def readBms():
-        sleep(0.5)
-        received_data = ser.read()              #read serial port
-        data_left = ser.inWaiting()             #check for remaining byte
-        received_data += ser.read(data_left)
-        #print ("data recieved:", received_data)  #print received data
-        return received_data
-        
-    """
-
-    
-    #ser = serial.Serial ("/dev/ttyUSB0", 19200)    #Open port with baud rate
-    #ser.write("~20004642E00200FD37\r".encode("ascii"))
-
-    #Bms.bmsData = readBms()  
-    
 
     Bms.readBms()
     Bms.calBmsStatusFlags()
     Bms.processAllBmsParameters()
-
-    
-    '''
-    Bms.processBmsCellLevelVotage()
-    Bms.processBmsCurrent()
-    Bms.processBmsVoltage("bmsBusVoltage")
-    Bms.processBmsVoltage("bmsBankVoltage")
-    Bms.processBmsSOC()
-    Bms.processBmsCycles()
-    '''
 
 
     print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
@@ -429,13 +371,10 @@ def main(args=None):
     print( "Cmd info length:", Bms.getBmsDataInfoLength())
     print( "SOC:", Bms.getBmsPackSOC())
     print( "Bms Cycles:", Bms.getBmsCycles())
-
-    voltages = json.dumps(Bms.getBmsCellLevelVoltages())
-    bankvolt = json.dumps(Bms.getBmsPackVoltage())
-    current = json.dumps(Bms.getBmsCurrent())
     
 
-
+    #data type to communicated with mysql server on raspberrypi
+    '''
     dictdata = {}
     dictdata["id"] = 1
     dictdata["name"] = "mudi"
@@ -443,6 +382,7 @@ def main(args=None):
     dictdata["voltage"] = bankvolt
     dictdata["current"] = current
     dictdata["soc"] = Bms.getBmsPackSOC()
+    '''
 
 
 
@@ -485,9 +425,6 @@ def main(args=None):
     #print(r.text)
     
     #print(json.dumps(r.text))
-
-
-    # Converting back from ascii to binary 
 
 if __name__ == '__main__':
     main()
