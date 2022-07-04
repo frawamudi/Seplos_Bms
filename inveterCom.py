@@ -1,4 +1,8 @@
+#!/usr/bin/python3
+from configparser import ConfigParser
 from logging import warning
+from os import read
+import re
 from requests.structures import CaseInsensitiveDict
 import serial
 from time import sleep
@@ -22,6 +26,18 @@ class seplos:
 
     #command code CID2
     bmsCommands = {"TeleInfo":"~20004642E00200FD37\r", "TeleCmd":"~20004644E00200FD35\r"}
+
+    bmsTeleInfoCmd = [ 
+    "~20004642E00200FD37\r", 
+    "~20014642E00201FD35\r", 
+    "~20024642E00202FD33\r",
+    "~20034642E00203FD31\r",
+    "~20044642E00204FD3F\r",
+    "~20054642E00205FD3D\r",
+    "~20064642E00206FD3B\r",
+    "~20074642E00207FD39\r",
+    ]
+
     asciiToBinary = { '0': 0,'1': 1,'2': 2,'3': 3,'4': 4,'5': 5,'6': 6,'7': 7,'8': 8,'9':9,'A':10,'B':11,'C':12,'D':13,'E':14,'F':15 }
     
     
@@ -45,13 +61,13 @@ class seplos:
         self.bmsStatusFlag = {"stateFlag":0,"currentFlag":0,"lowCellFlag":0,"highCellFlag":0}
 
     
-    def readBms( self ):
+    def readBms( self, bank ):
         try:
             ser = serial.Serial("/dev/ttyUSB0", 19200, )
             ser.timeout = 2.5
             print(" port opened for communication")
             #ser.write("~20004642E00200FD37\r".encode("ascii"))
-            ser.write(self.bmsCommands["TeleInfo"].encode("ascii"))
+            ser.write(self.bmsTeleInfoCmd[bank].encode("ascii"))
             sleep(0.5)     
             received_data = ser.read()              #read serial port
             data_left = ser.inWaiting()             #check for remaining byte
@@ -60,6 +76,7 @@ class seplos:
             self.bmsTelInfoData = received_data.decode("ascii")
             print ("TeleInfo:", self.bmsTelInfoData)  #print received data
 
+            '''
             ser.write(self.bmsCommands["TeleCmd"].encode("ascii"))
             sleep(0.5)     
             received_data = ser.read()              #read serial port
@@ -69,7 +86,8 @@ class seplos:
             self.bmsTelCmdData = received_data.decode("ascii")
             print ("TeleCmd:", self.bmsTelCmdData)  #print received data
             ser.close()
-            return True            
+            return True
+            '''            
 
         except serial.SerialException as var : # var contains details of issue
             print('An Exception Occured')
@@ -253,9 +271,6 @@ class seplos:
         return True
 
 
-
-
-
     #this function process cell level votages 
     def processBmsCellLevelVotage( self ):
         self.bmsCellLevelVolages = []
@@ -330,7 +345,7 @@ class seplos:
     def getBmsCurrent( self ):
         return self.bmsCurrent
 
-    def getSeplosdatachecksum( self) :
+    def getSeplosdatachecksum( self):
         pass
 
     def getBmsPackVoltage( self ):
@@ -357,20 +372,45 @@ def main(args=None):
 
     #REMEMBER TO CHANGE LIST APPEND FUNCTION TO INSERT
 
+    #Read config.ini file
+    config_object = ConfigParser()
+    config_object.read("config.ini")
 
-    Bms.readBms()
-    Bms.calBmsStatusFlags()
-    Bms.processAllBmsParameters()
+    #Get the BMSPARAM
+    userinfo = config_object["BMSPARAM"]
+    readBank = int(userinfo["mastercan"])
 
+    while readBank >= 0 and readBank <= 1: 
+        Bms.readBms(readBank)
+        #Bms.calBmsStatusFlags()
+        Bms.processAllBmsParameters()
 
-    print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
-    print( "Current:" ,Bms.getBmsCurrent())
-    print( "PackVoltage:", Bms.getBmsPackVoltage())
-    print( "BusVoltage:", Bms.getBmsBusVoltage())
-    print( "Data length:", Bms.getBmsDataLength())
-    print( "Cmd info length:", Bms.getBmsDataInfoLength())
-    print( "SOC:", Bms.getBmsPackSOC())
-    print( "Bms Cycles:", Bms.getBmsCycles())
+        print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
+        print( "Current:" ,Bms.getBmsCurrent())
+        print( "PackVoltage:", Bms.getBmsPackVoltage())
+        print( "BusVoltage:", Bms.getBmsBusVoltage())
+        print( "Data length:", Bms.getBmsDataLength())
+        print( "Cmd info length:", Bms.getBmsDataInfoLength())
+        print( "SOC:", Bms.getBmsPackSOC())
+        print( "Bms Cycles:", Bms.getBmsCycles())
+        maxRange = mx.max_check(Bms.bmsCellLevelVolages)
+        minRange = mx.min_check(Bms.bmsCellLevelVolages)
+        cellRange = (maxRange - minRange)*1000
+        print( "Range:", int(cellRange))      
+        print("\n")
+
+        #sleep(5)
+        readBank -= 1
+        
+
+    data = {
+        "Bank": 0,
+        "Rack Voltage": 0.00,
+        "Module Voltage": 0.00,
+        "Min cell Voltage": 0.00,
+        "Max cell Voltage": 0.00,
+        "Single cell Voltages": [],
+    }
     
 
     #data type to communicated with mysql server on raspberrypi
@@ -387,7 +427,7 @@ def main(args=None):
 
 
 
-
+    '''
     url = "http://batterystatus.sunhive.com/api/devices/update"
 
     headers = CaseInsensitiveDict()
@@ -418,7 +458,7 @@ def main(args=None):
     resp = requests.post(url, data=p, headers=headers)
 
     print(resp.status_code)
-
+    '''
 
 
     #r = requests.post("http://192.168.1.8/update.php", data=dictdata)
