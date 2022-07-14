@@ -383,7 +383,7 @@ def main(args=None):
 
     #Get the BMSPARAM
     userinfo = config_object["BMSPARAM"]
-    readBank = int(userinfo["mastercan"])
+    # readBank = int(userinfo["mastercan"])
 
     data = {
         "Bank": 0,
@@ -399,8 +399,10 @@ def main(args=None):
 
     }
 
+    client = mqtt_com.connect_mqtt()
     while True:
-        sleep(2)
+        sleep(5)
+        readBank = int(userinfo["mastercan"])
         while readBank >= 0 and readBank <= 1: 
             Bms.readBms(readBank)
             #Bms.calBmsStatusFlags()
@@ -438,7 +440,7 @@ def main(args=None):
 
             print("\n")
 
-            client = mqtt_com.connect_mqtt()
+            
             msg = json.dumps(data)
             mqtt_com.publish(client, msg)
 
