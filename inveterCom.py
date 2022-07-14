@@ -12,6 +12,11 @@ import math
 import requests
 import json
 import listMinMax as mx
+
+import mqtt_com 
+
+#import paho.mqtt.client as mqtt
+
 #--------------------------------------------------------------------
 # ITEMS | SOI | VER | ADR | CID1 | CID2 | LEN | INFO | CHKSUM | EO1 |
 #--------------------------------------------------------------------
@@ -380,37 +385,68 @@ def main(args=None):
     userinfo = config_object["BMSPARAM"]
     readBank = int(userinfo["mastercan"])
 
-    while readBank >= 0 and readBank <= 1: 
-        Bms.readBms(readBank)
-        #Bms.calBmsStatusFlags()
-        Bms.processAllBmsParameters()
-
-        print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
-        print( "Current:" ,Bms.getBmsCurrent())
-        print( "PackVoltage:", Bms.getBmsPackVoltage())
-        print( "BusVoltage:", Bms.getBmsBusVoltage())
-        print( "Data length:", Bms.getBmsDataLength())
-        print( "Cmd info length:", Bms.getBmsDataInfoLength())
-        print( "SOC:", Bms.getBmsPackSOC())
-        print( "Bms Cycles:", Bms.getBmsCycles())
-        maxRange = mx.max_check(Bms.bmsCellLevelVolages)
-        minRange = mx.min_check(Bms.bmsCellLevelVolages)
-        cellRange = (maxRange - minRange)*1000
-        print( "Range:", int(cellRange))      
-        print("\n")
-
-        #sleep(5)
-        readBank -= 1
-        
-
     data = {
         "Bank": 0,
-        "Rack Voltage": 0.00,
+        #"Rack Voltage": 0.00,
         "Module Voltage": 0.00,
-        "Min cell Voltage": 0.00,
-        "Max cell Voltage": 0.00,
-        "Single cell Voltages": [],
+        #"Min cell Voltage": 0.00,
+        #"Max cell Voltage": 0.00,
+        "Cell Voltages": [],
+        "Current": 0.00,
+        "SOC":0,
+        "BMS Cycles": 0,
+        "BMS Range": 0
+
     }
+
+    while True:
+        sleep(2)
+        while readBank >= 0 and readBank <= 1: 
+            Bms.readBms(readBank)
+            #Bms.calBmsStatusFlags()
+            Bms.processAllBmsParameters()
+
+            data["Bank"] = readBank
+        
+
+            #print("Cell Voltages:", Bms.getBmsCellLevelVoltages())
+            data["Cell Voltages"] = Bms.getBmsCellLevelVoltages()
+
+            #print( "Current:" ,Bms.getBmsCurrent())
+            data["Current"] = Bms.getBmsCurrent()
+
+            #print( "PackVoltage:", Bms.getBmsPackVoltage())
+            data["Module Voltage"] = Bms.getBmsPackVoltage()
+
+            #print( "BusVoltage:", Bms.getBmsBusVoltage())
+            data["Pack Voltage"] = Bms.getBmsBusVoltage()
+
+            #print( "Data length:", Bms.getBmsDataLength())
+            #print( "Cmd info length:", Bms.getBmsDataInfoLength())
+
+            #print( "SOC:", Bms.getBmsPackSOC())
+            data["SOC"] = Bms.getBmsPackSOC()
+
+            #print( "Bms Cycles:", Bms.getBmsCycles())
+            data["BMS Cycles"] = Bms.getBmsCycles()
+
+            maxRange = mx.max_check(Bms.bmsCellLevelVolages)
+            minRange = mx.min_check(Bms.bmsCellLevelVolages)
+            cellRange = (maxRange - minRange)*1000
+            #print( "Range:", int(cellRange))
+            data["BMS Range"] = int(cellRange)
+
+            print("\n")
+
+            client = mqtt_com.connect_mqtt()
+            msg = json.dumps(data)
+            mqtt_com.publish(client, msg)
+
+            #sleep(5)
+            readBank -= 1
+        
+
+
     
 
     #data type to communicated with mysql server on raspberrypi
