@@ -399,8 +399,8 @@ def main(args=None):
 
     }
 
-    client = mqtt_com.connect_mqtt()
-    while True:
+    client = mqtt_com.connect_mqtt('test.mosquitto.org', 'Sunhive', 'Sunhive', 1883)
+    while True: 
         sleep(5)
         readBank = int(userinfo["mastercan"])
         while readBank >= 0 and readBank <= 1: 

@@ -16,7 +16,7 @@ client_id = ""
 username = "Sunhive"
 password = 'Sunhive'
 
-def connect_mqtt():
+def connect_mqtt(broker_conn = broker, username_conn = username, password_conn = password, port_conn = port):
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -24,9 +24,9 @@ def connect_mqtt():
             print("Failed to connect, return code %d\n", rc)
     # Set Connecting Client ID
     client = mqtt_client.Client(client_id)
-    client.username_pw_set(username, password)
+    client.username_pw_set(username_conn, password_conn)
     client.on_connect = on_connect
-    client.connect(broker, port)
+    client.connect(broker_conn, port_conn)
     client.loop_start()  # Start networking daemon
     return client
 
