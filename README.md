@@ -1,3 +1,3 @@
 # PythonFiles
 
-Reading data from seplos BMS
+A python script to reading data from seplos BMS
